@@ -55,7 +55,7 @@ No install needed. Just open the file:
 
 ```
 # Clone the repo
-git clone https://github.com/YOUR-USERNAME/journal-app.git
+git clone https://github.com/rishikiran1103/journal-app.git
 
 # Open in your browser
 open journal-app.html        # macOS
