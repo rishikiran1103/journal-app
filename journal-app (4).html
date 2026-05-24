@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Journal — My Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root{
+  --bg:#F7F4EF;--surface:#FFF;--surface2:#F0EDE7;
+  --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.15);
+  --text:#1A1714;--text2:#6B6560;--text3:#A09B96;
+  --accent:#8B5E3C;--accent-light:#F5EBE0;--danger:#9B3C3C;
+  --radius:10px;--sidebar:240px;
+}
+html.dark{
+  --bg:#1A1714!important;--surface:#232019!important;--surface2:#2A2620!important;
+  --border:rgba(255,255,255,0.08)!important;--border2:rgba(255,255,255,0.14)!important;
+  --text:#EDE8E1!important;--text2:#A09B94!important;--text3:#5E5A55!important;
+  --accent:#C49A72!important;--accent-light:#2C2218!important;--danger:#C47272!important;
+}
+html.light{
+  --bg:#F7F4EF!important;--surface:#FFF!important;--surface2:#F0EDE7!important;
+  --border:rgba(0,0,0,0.09)!important;--border2:rgba(0,0,0,0.15)!important;
+  --text:#1A1714!important;--text2:#6B6560!important;--text3:#A09B96!important;
+  --accent:#8B5E3C!important;--accent-light:#F5EBE0!important;--danger:#9B3C3C!important;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1A1714;--surface:#232019;--surface2:#2A2620;
+    --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+    --text:#EDE8E1;--text2:#A09B94;--text3:#5E5A55;
+    --accent:#C49A72;--accent-light:#2C2218;--danger:#C47272;
+  }
+}
+
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sidebar);min-width:var(--sidebar);
+  background:var(--surface2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;height:100vh;
+  transition:margin-left .22s ease;
+}
+#sidebar.collapsed{margin-left:calc(-1 * var(--sidebar));}
+@media(max-width:700px){
+  #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transition:transform .22s ease;}
+  #sidebar.collapsed{transform:translateX(-100%);margin-left:0;}
+}
+#sidebar-top{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+#app-title{font-family:'Lora',serif;font-size:18px;font-weight:600;color:var(--accent);
+  letter-spacing:-.3px;display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+#app-title svg{width:18px;height:18px;flex-shrink:0;}
+#new-btn{width:100%;padding:9px 14px;background:var(--accent);color:#fff;border:none;
+  border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;}
+#new-btn:hover{opacity:.88;}
+#search-wrap{padding:10px 12px 6px;position:relative;}
+#search-wrap svg{position:absolute;left:21px;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;color:var(--text3);pointer-events:none;}
+#search{width:100%;padding:8px 10px 8px 32px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;}
+#search:focus{border-color:var(--accent);}
+#search::placeholder{color:var(--text3);}
+#notes-list{flex:1;overflow-y:auto;padding:6px 8px 20px;}
+#notes-list::-webkit-scrollbar{width:4px;}
+#notes-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+.note-item{padding:11px 12px;border-radius:var(--radius);cursor:pointer;
+  margin-bottom:3px;border:1px solid transparent;transition:background .12s;}
+.note-item:hover{background:var(--surface);}
+.note-item.active{background:var(--surface);border-color:var(--border2);}
+.ni-title{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ni-meta{font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.ni-preview{font-size:12px;color:var(--text2);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nbadge{font-size:10px;padding:1px 5px;border-radius:4px;background:var(--accent-light);color:var(--accent);font-weight:500;}
+#sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);text-align:center;}
+#mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:99;}
+#mob-overlay.show{display:block;}
+
+/* ── MAIN ── */
+#main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+/* ── TOOLBAR ── */
+#toolbar{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;
+  align-items:center;gap:3px;flex-wrap:wrap;background:var(--surface);}
+.tb{background:none;border:1px solid transparent;border-radius:7px;width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  color:var(--text2);transition:all .12s;flex-shrink:0;}
+.tb svg{width:16px;height:16px;}
+.tb:hover{background:var(--surface2);color:var(--text);border-color:var(--border);}
+.tb.on{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+.sep{width:1px;height:22px;background:var(--border2);margin:0 2px;flex-shrink:0;}
+#mood-row{margin-left:auto;display:flex;gap:2px;}
+.mood{background:none;border:1px solid transparent;border-radius:8px;padding:4px 6px;
+  font-size:16px;cursor:pointer;line-height:1;transition:all .12s;}
+.mood:hover,.mood.sel{background:var(--surface2);border-color:var(--border2);transform:scale(1.15);}
+
+/* ── MODE TABS ── */
+#mode-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);}
+.mode-tab{flex:1;padding:8px 0;font-size:12px;font-weight:500;color:var(--text3);
+  background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.mode-tab svg{width:14px;height:14px;}
+.mode-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* ── TEXT PANEL ── */
+#text-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#title-wrap{padding:16px 22px 4px;background:var(--surface);border-bottom:1px solid var(--border);}
+#title-input{width:100%;border:none;outline:none;font-family:'Lora',serif;font-size:22px;
+  font-weight:600;color:var(--text);background:transparent;letter-spacing:-.5px;}
+#title-input::placeholder{color:var(--text3);font-weight:400;}
+#editor-wrap{flex:1;overflow-y:auto;background:var(--surface);}
+#editor-wrap::-webkit-scrollbar{width:5px;}
+#editor-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+#editor{min-height:100%;padding:16px 22px 60px;outline:none;font-family:'Lora',serif;
+  font-size:16px;line-height:1.85;color:var(--text);}
+#editor:empty:before{content:attr(data-ph);color:var(--text3);font-style:italic;}
+/* Force dark text on yellow highlights so they're readable in dark mode */
+#editor [style*="background-color: rgb(255, 241, 118)"]{color:#1A1714!important;}
+#editor [style*="background-color:#FFF176"]{color:#1A1714!important;}
+#editor [style*="background-color: #FFF176"]{color:#1A1714!important;}
+#editor ul,#editor ol{padding-left:22px;}
+#editor b,#editor strong{font-weight:600;}
+#editor h2{font-size:19px;margin:12px 0 4px;}
+
+/* ── DRAW PANEL ── */
+#draw-panel{flex:1;display:none;flex-direction:column;overflow:hidden;}
+#draw-panel.show{display:flex;}
+#draw-toolbar{padding:7px 12px;border-bottom:1px solid var(--border);display:flex;
+  align-items:center;gap:5px;flex-wrap:wrap;background:var(--surface2);}
+.dtb{background:none;border:1px solid transparent;border-radius:7px;padding:5px 10px;
+  font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);
+  transition:all .12s;display:flex;align-items:center;gap:4px;white-space:nowrap;height:32px;}
+.dtb svg{width:14px;height:14px;flex-shrink:0;}
+.dtb:hover{background:var(--surface);color:var(--text);border-color:var(--border);}
+.dtb.on{background:var(--accent-light);color:var(--accent);border-color:var(--accent);}
+
+/* color bar */
+#pen-colors{display:flex;gap:4px;align-items:center;flex-wrap:nowrap;}
+.pcol{width:22px;height:22px;border-radius:50%;border:2.5px solid transparent;
+  cursor:pointer;transition:transform .12s;flex-shrink:0;}
+.pcol:hover{transform:scale(1.18);}
+.pcol.sel{border-color:var(--text);box-shadow:0 0 0 1px var(--surface2);}
+#colors-anchor{position:relative;}
+
+/* color popover */
+#color-popover{display:none;position:absolute;z-index:300;background:var(--surface);
+  border:1px solid var(--border2);border-radius:12px;padding:14px 16px;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);width:310px;top:calc(100% + 8px);left:0;}
+#color-popover.show{display:block;}
+#color-popover h4{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:10px;}
+#palette-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:14px;}
+.pal-swatch{
+  width:30px;height:30px;border-radius:50%;border:2.5px solid transparent;
+  cursor:pointer;transition:transform .12s,box-shadow .12s;
+  position:relative;flex-shrink:0;
+}
+.pal-swatch:hover{transform:scale(1.15);}
+/* In bar — white ring + drop shadow to mark it's active */
+.pal-swatch.in-bar{
+  box-shadow:0 0 0 2.5px var(--text), 0 0 0 5px transparent;
+  border-color:transparent;
+}
+/* Staged (pending add) — accent-colored thick ring + glow */
+.pal-swatch.staged{
+  box-shadow:0 0 0 3px var(--accent), 0 0 8px 1px var(--accent);
+  transform:scale(1.18);
+}
+/* Staged AND in-bar = about to be removed — red ring */
+.pal-swatch.in-bar.staged{
+  box-shadow:0 0 0 3px var(--danger), 0 0 8px 1px var(--danger);
+  transform:scale(1.18);
+}
+/* Icon overlay using ::after pseudo-element */
+.pal-swatch::after{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;line-height:30px;text-align:center;
+  pointer-events:none;font-weight:700;
+}
+.pal-swatch.in-bar::after{
+  content:'✓';
+  color:rgba(255,255,255,0.9);
+  text-shadow:0 0 3px rgba(0,0,0,0.8);
+}
+.pal-swatch.staged:not(.in-bar)::after{
+  content:'+';
+  color:rgba(255,255,255,0.95);
+  text-shadow:0 0 3px rgba(0,0,0,0.9);
+  font-size:14px;
+}
+.pal-swatch.in-bar.staged::after{
+  content:'✕';
+  color:rgba(255,255,255,0.95);
+  text-shadow:0 0 3px rgba(0,0,0,0.9);
+}
+#popover-footer{display:flex;align-items:center;gap:6px;border-top:1px solid var(--border);
+  padding-top:10px;flex-wrap:wrap;}
+#popover-footer label{font-size:12px;color:var(--text2);white-space:nowrap;}
+.spin-btn{width:24px;height:26px;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:6px;cursor:pointer;font-size:15px;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;}
+.spin-btn:hover{background:var(--accent-light);color:var(--accent);}
+#swatch-count{width:34px;padding:3px 4px;border:1px solid var(--border2);border-radius:6px;
+  font-size:12px;background:var(--surface);color:var(--text);text-align:center;
+  -moz-appearance:textfield;}
+#swatch-count::-webkit-inner-spin-button,
+#swatch-count::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+#popover-custom-wrap{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);}
+#popover-custom-input{width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);
+  cursor:pointer;padding:0;background:none;}
+#popover-confirm{background:var(--accent);color:#fff;border:none;border-radius:7px;
+  padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;margin-left:auto;}
+#popover-confirm:hover{opacity:.88;}
+
+/* size slider */
+#size-wrap{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);}
+#pen-size{width:65px;accent-color:var(--accent);cursor:pointer;}
+
+/* canvas area */
+#canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--surface);}
+#draw-canvas{display:block;touch-action:none;}
+#paper-lines{position:absolute;inset:0;pointer-events:none;opacity:.18;}
+/* eraser cursor SVG overlay */
+#eraser-cursor{position:absolute;inset:0;pointer-events:none;overflow:visible;display:none;}
+/* toasts */
+#palm-toast{position:absolute;bottom:10px;right:14px;font-size:11px;color:var(--text2);
+  background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+  padding:4px 10px;pointer-events:none;opacity:0;transition:opacity .25s;}
+#palm-toast.show{opacity:1;}
+#zoom-badge{position:absolute;bottom:10px;left:14px;font-size:11px;color:var(--text2);
+  background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+  padding:4px 10px;pointer-events:none;opacity:0;transition:opacity .25s;}
+#zoom-badge.show{opacity:1;}
+
+/* text zoom badge — mirrors draw zoom badge */
+#text-zoom-badge{position:absolute;bottom:10px;left:14px;font-size:11px;color:var(--text2);
+  background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+  padding:4px 10px;pointer-events:none;opacity:0;transition:opacity .25s;z-index:10;}
+#text-zoom-badge.show{opacity:1;}
+
+/* ── STATUS BAR ── */
+#statusbar{padding:6px 22px;border-top:1px solid var(--border);background:var(--surface2);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;color:var(--text3);gap:12px;flex-shrink:0;}
+#sb-pen{color:var(--accent);font-weight:500;}
+
+/* handwriting panel */
+#hw-panel{display:none;flex-direction:column;gap:8px;padding:10px 14px;
+  border-bottom:1px solid var(--border);background:var(--surface2);}
+#hw-status{font-size:12px;color:var(--text3);}
+#hw-canvas{width:100%;height:120px;background:var(--surface);border:1px solid var(--border2);
+  border-radius:8px;cursor:crosshair;touch-action:none;}
+#hw-actions{display:flex;gap:8px;}
+.hw-btn{padding:5px 14px;border-radius:7px;border:none;font-size:12px;font-weight:500;cursor:pointer;}
+.hw-insert{background:var(--accent);color:#fff;}
+.hw-clear{background:var(--surface);color:var(--text2);border:1px solid var(--border2);}
+#font-size-select{padding:4px 6px;border:1px solid var(--border);border-radius:7px;
+  font-size:12px;background:var(--surface2);color:var(--text);cursor:pointer;outline:none;height:34px;}
+#font-size-select:focus{border-color:var(--accent);}
+
+/* in-page confirm toast */
+#confirm-toast{display:none;position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  background:var(--surface);border:1px solid var(--border2);border-radius:12px;
+  padding:14px 20px;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:1000;
+  font-size:13px;color:var(--text);text-align:center;min-width:260px;}
+#confirm-toast.show{display:block;}
+#confirm-toast p{margin-bottom:12px;font-weight:500;}
+#confirm-toast div{display:flex;gap:8px;justify-content:center;}
+.ct-btn{padding:6px 18px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;}
+.ct-yes{background:var(--danger);color:#fff;}
+.ct-no{background:var(--surface2);color:var(--text);border:1px solid var(--border2);}
+
+/* done notification banner */
+#done-banner{display:none;position:fixed;top:18px;left:50%;transform:translateX(-50%);
+  background:#16A34A;color:#fff;padding:12px 28px;border-radius:12px;
+  font-size:14px;font-weight:500;z-index:2000;box-shadow:0 4px 20px rgba(0,0,0,.2);
+  animation:slideDown .3s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-16px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+/* ── PRINT ── */
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  #sidebar,#toolbar,#mode-tabs,#draw-toolbar,#statusbar,
+  #hw-panel,#confirm-toast,#done-banner,#mob-overlay,
+  #eraser-cursor,#zoom-badge,#text-zoom-badge,#palm-toast{display:none!important;}
+  html,body{
+    height:auto!important;min-height:0!important;
+    overflow:visible!important;display:block!important;
+  }
+  #main{
+    height:auto!important;overflow:visible!important;
+    display:block!important;min-height:0!important;
+  }
+  #text-panel{
+    display:block!important;overflow:visible!important;
+    height:auto!important;flex:none!important;
+  }
+  #editor-wrap{
+    overflow:visible!important;height:auto!important;
+    flex:none!important;display:block!important;
+  }
+  #title-wrap{padding:0 0 12px!important;border:none!important;}
+  #title-input{
+    font-size:24px!important;font-family:'Lora',serif!important;
+    font-weight:600!important;display:block!important;width:100%!important;
+  }
+  #editor{
+    min-height:0!important;padding:0!important;
+    font-size:16px!important;line-height:1.85!important;
+  }
+  #draw-panel{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- in-page confirm toast (replaces window.confirm for clear/delete) -->
+<div id="confirm-toast">
+  <p id="confirm-msg">Are you sure?</p>
+  <div>
+    <button class="ct-btn ct-yes" id="confirm-yes" onclick="confirmYes()">Yes</button>
+    <button class="ct-btn ct-no" onclick="hideConfirm()">Cancel</button>
+  </div>
+</div>
+<!-- done notification -->
+<div id="done-banner">✅ All done! Journal is updated.</div>
+
+<div id="mob-overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div id="sidebar-top">
+    <div id="app-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      My Journal
+    </div>
+    <button id="new-btn" onclick="newNote()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
+      New note
+    </button>
+  </div>
+  <div id="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="search" type="search" placeholder="Search…" oninput="filterNotes(this.value)">
+  </div>
+  <div id="notes-list"></div>
+  <div id="sidebar-footer">Saved locally · no account needed</div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- TOP TOOLBAR -->
+  <div id="toolbar">
+    <button class="tb" onclick="toggleSidebar()" title="Toggle sidebar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <!-- text-mode tools -->
+    <span id="text-tools" style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
+      <button class="tb" id="btn-bold" title="Bold (Ctrl+B)" onclick="fmtToggle('bold')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 12h8a4 4 0 0 0 0-8H6v8zm0 0h9a4 4 0 0 1 0 8H6v-8z"/></svg></button>
+      <button class="tb" id="btn-italic" title="Italic (Ctrl+I)" onclick="fmtToggle('italic')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
+      <button class="tb" id="btn-underline" title="Underline (Ctrl+U)" onclick="fmtToggle('underline')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></button>
+      <div class="sep"></div>
+      <button class="tb" title="Bullet list" onclick="fmt('insertUnorderedList')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></svg></button>
+      <button class="tb" title="Numbered list" onclick="fmt('insertOrderedList')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4M4 10h2M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+      <div class="sep"></div>
+      <button class="tb" title="Highlight (toggle)" id="btn-highlight" onclick="toggleHighlight()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 11-6 6v3h3l6-6"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></button>
+      <button class="tb" title="Stamp date & time" onclick="stampDate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+      <div class="sep"></div>
+      <div id="font-size-wrap">
+        <select id="font-size-select" onchange="changeFontSize(this.value)" title="Font size">
+          <option value="12">12</option>
+          <option value="14">14</option>
+          <option value="16" selected>16</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="24">24</option>
+          <option value="28">28</option>
+          <option value="32">32</option>
+        </select>
+      </div>
+      <div class="sep"></div>
+      <!-- F3: undo/redo/clear for text mode -->
+      <button class="tb" title="Undo (Ctrl+Z)" onclick="document.execCommand('undo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+      <button class="tb" title="Redo (Ctrl+Y)" onclick="document.execCommand('redo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+      <button class="tb" title="Clear all text" onclick="clearTextConfirm()" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      <div class="sep"></div>
+      <!-- F4: zoom controls for text mode (browser text zoom) -->
+      <button class="tb" title="Increase text zoom" onclick="textZoom(1.1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+      <button class="tb" title="Decrease text zoom" onclick="textZoom(0.91)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+      <button class="tb" title="Reset text zoom" onclick="textZoom(0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+      <div class="sep"></div>
+    </span>
+    <button class="tb" title="Draw to Text (Handwriting Recognition)" onclick="toggleHandwriting()" style="color:var(--accent)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+    </button>
+    <button class="tb" title="Print / Save as PDF" onclick="doPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+    <button class="tb" title="Export as .txt" onclick="exportTxt()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+    <button class="tb" title="Delete note" onclick="deleteNote()" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+    <!-- theme toggle -->
+    <button class="tb" id="theme-btn" title="Toggle dark/light" onclick="toggleTheme()">
+      <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="ico-sun"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <!-- mood buttons — tag the emotional vibe of each journal entry -->
+    <div id="mood-row">
+      <button class="mood" title="Happy"    onclick="setMood('😊',this)">😊</button>
+      <button class="mood" title="Calm"     onclick="setMood('😌',this)">😌</button>
+      <button class="mood" title="Neutral"  onclick="setMood('😐',this)">😐</button>
+      <button class="mood" title="Sad"      onclick="setMood('😔',this)">😔</button>
+      <button class="mood" title="Grateful" onclick="setMood('🙏',this)">🙏</button>
+      <button class="mood" title="Excited"  onclick="setMood('🎉',this)">🎉</button>
+    </div>
+  </div>
+
+  <!-- HANDWRITING / DRAW-TO-TEXT PANEL (F1) -->
+  <div id="hw-panel">
+    <div id="hw-status">Initialising handwriting recognition…</div>
+    <canvas id="hw-canvas"></canvas>
+    <div id="hw-actions">
+      <button class="hw-btn hw-insert" onclick="recognizeHandwriting()">Insert text ↵</button>
+      <button class="hw-btn hw-clear" onclick="hCtx&&hCtx.clearRect(0,0,hCanvas.width,hCanvas.height);hPoints=[];">Clear</button>
+    </div>
+  </div>
+
+  <!-- MODE TABS -->
+  <div id="mode-tabs">
+    <button class="mode-tab active" id="tab-text" onclick="switchMode('text')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 6H7M12 6v12M9 18h6"/></svg>
+      Type
+    </button>
+    <button class="mode-tab" id="tab-draw" onclick="switchMode('draw')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg>
+      Draw / Handwrite
+    </button>
+  </div>
+
+  <!-- TEXT PANEL -->
+  <div id="text-panel">
+    <div id="title-wrap">
+      <input id="title-input" type="text" placeholder="Give this note a title…"
+        oninput="saveNote()" autocomplete="off" spellcheck="true">
+    </div>
+    <div id="editor-wrap" style="position:relative;">
+      <div id="text-zoom-badge"></div>
+      <div id="editor" contenteditable="true" data-ph="Tap here and start writing…"
+        oninput="saveNote()" spellcheck="true"></div>
+    </div>
+  </div>
+
+  <!-- DRAW PANEL -->
+  <div id="draw-panel">
+    <div id="draw-toolbar">
+      <!-- tools -->
+      <button class="dtb on" id="tool-pen" onclick="setTool('pen',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>Pen
+      </button>
+      <button class="dtb" id="tool-marker" onclick="setTool('marker',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="10" height="14" rx="3"/><path d="M9 16v6l2-2 2 2v-6"/></svg>Marker
+      </button>
+      <button class="dtb" id="tool-eraser" onclick="setTool('eraser',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 21-4.3-4.3c-1-1-.6-2.5.6-3.1l15-7 3 3-18.6 8 2.8 3.4"/><path d="M22 21H7"/><path d="m5 11 10 10"/></svg>Eraser
+      </button>
+      <div class="sep"></div>
+
+      <!-- color bar + popover -->
+      <div id="colors-anchor">
+        <div id="pen-colors"></div>
+        <button id="palette-gear" title="Edit palette" onmousedown="paletteGearDown(event)" onclick="paletteGearClick(event)" style="background:none;border:1.5px dashed var(--border2);border-radius:50%;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:2px;color:var(--text3);">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        </button>
+        <div id="color-popover">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:12px;font-weight:500;color:var(--text2);">Click to add/remove → Apply</span>
+          <span id="staging-counter" style="font-size:11px;color:var(--accent);font-weight:500;"></span>
+        </div>
+          <div id="palette-grid"></div>
+          <div id="popover-footer">
+            <label>In bar:</label>
+            <button class="spin-btn" onclick="adjustCount(-1)">−</button>
+            <input type="text" inputmode="numeric" id="swatch-count" value="7"
+              oninput="setSwatchCount(parseInt(this.value)||1)">
+            <button class="spin-btn" onclick="adjustCount(1)">+</button>
+            <div id="popover-custom-wrap">
+              Custom:
+              <input type="color" id="popover-custom-input" value="#ff0000"
+                title="Pick any color" onchange="addCustomToStage(this.value)">
+            </div>
+            <button id="popover-confirm" onclick="confirmPalette()">✓ Apply</button>
+          </div>
+        </div>
+      </div>
+      <div class="sep"></div>
+
+      <!-- size slider -->
+      <div id="size-wrap">
+        <svg viewBox="0 0 24 24" width="10" height="10"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+        <input type="range" id="pen-size" min="1" max="20" value="2" step="1" oninput="penSize=+this.value">
+        <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg>
+      </div>
+      <div class="sep"></div>
+
+      <!-- zoom controls -->
+      <button class="dtb" id="tool-zoom" onclick="setTool('zoom',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>Zoom
+      </button>
+      <button class="dtb" onclick="zoomStep(1.25)" title="Zoom in (Ctrl++)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>In
+      </button>
+      <button class="dtb" onclick="zoomStep(0.8)" title="Zoom out (Ctrl+-)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg>Out
+      </button>
+      <button class="dtb" onclick="resetZoom()" title="Reset (Ctrl+0)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>100%
+      </button>
+      <div class="sep"></div>
+
+      <!-- actions -->
+      <button class="dtb" id="btn-undo" onclick="undoStroke()" title="Undo (Ctrl+Z)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Undo
+      </button>
+      <button class="dtb" id="btn-redo" onclick="redoStroke()" title="Redo (Ctrl+Y)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>Redo
+      </button>
+      <button class="dtb" id="btn-clear" onclick="clearCanvas()" style="color:var(--danger)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Clear
+      </button>
+      <button class="dtb" onclick="savePNG()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PNG
+      </button>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;">
+        <input type="checkbox" id="lined-paper" onchange="toggleLines()" style="accent-color:var(--accent);"> Lines
+      </label>
+    </div>
+
+    <!-- canvas -->
+    <div id="canvas-wrap">
+      <svg id="paper-lines" xmlns="http://www.w3.org/2000/svg"></svg>
+      <canvas id="draw-canvas"></canvas>
+      <!-- eraser cursor ring — SVG overlay, never touches canvas compositing -->
+      <svg id="eraser-cursor" style="position:absolute;inset:0;pointer-events:none;overflow:visible;display:none;">
+        <circle id="eraser-ring" cx="0" cy="0" r="14" fill="rgba(255,255,255,0.15)"
+          stroke="#777" stroke-width="2" stroke-dasharray="5,3"/>
+      </svg>
+      <div id="palm-toast">✋ Palm ignored</div>
+      <div id="zoom-badge">100%</div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <span id="sb-words">0 words</span>
+    <span id="sb-pen"></span>
+    <span id="sb-mood"></span>
+    <span id="sb-date"></span>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+/* ════════════════════════════════════════════
+   THEME
+════════════════════════════════════════════ */
+(function(){
+  const saved=localStorage.getItem('jnl_theme');
+  const dark=saved?saved==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches;
+  document.documentElement.classList.add(dark?'dark':'light');
+})();
+
+function syncThemeIcon(){
+  const dark=document.documentElement.classList.contains('dark');
+  document.getElementById('ico-moon').style.display=dark?'none':'block';
+  document.getElementById('ico-sun').style.display=dark?'block':'none';
+}
+function toggleTheme(){
+  const html=document.documentElement;
+  const toDark=html.classList.contains('light');
+  html.classList.toggle('dark',toDark);
+  html.classList.toggle('light',!toDark);
+  localStorage.setItem('jnl_theme',toDark?'dark':'light');
+  syncThemeIcon();
+}
+
+/* ════════════════════════════════════════════
+   DATA STORE
+════════════════════════════════════════════ */
+const STORE='jnl_v4';
+let notes=[],currentId=null,nextId=1;
+
+function loadStore(){
+  try{const d=JSON.parse(localStorage.getItem(STORE)||'null');if(d){notes=d.notes||[];nextId=d.nextId||1;}}catch(e){}
+  if(!notes.length){
+    notes=[{id:1,title:'Welcome ✨',
+      content:'<p>Your journal supports your <b>stylus</b>!</p><ul><li>Switch to <b>Draw / Handwrite</b> tab for pen drawing</li><li>Pen = pressure‑sensitive drawing; finger = pan; two fingers = pinch zoom</li><li>Use the mood buttons (top right) to tag how you feel each entry</li></ul>',
+      drawing:'',date:new Date().toISOString(),mood:'😊',type:'text'}];
+    nextId=2;persist();
+  }
+}
+function persist(){
+  try{localStorage.setItem(STORE,JSON.stringify({notes,nextId}));}
+  catch(e){alert('Storage full — export some notes first.');}
+}
+function fmtDate(iso){return new Date(iso).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ════════════════════════════════════════════
+   NOTE LIST
+════════════════════════════════════════════ */
+function renderList(filter){
+  filter=(filter||'').toLowerCase();
+  const el=document.getElementById('notes-list');
+  const shown=notes.filter(n=>!filter||n.title.toLowerCase().includes(filter)||
+    n.content.replace(/<[^>]*>/g,'').toLowerCase().includes(filter));
+  el.innerHTML=shown.length?shown.map(n=>`
+    <div class="note-item${n.id===currentId?' active':''}" onclick="openNote(${n.id})" tabindex="0">
+      <div class="ni-title">${esc(n.title||'Untitled note')}</div>
+      <div class="ni-meta">${n.type==='draw'?'<span class="nbadge">✏️</span>':''}<span>${n.mood||''}</span>${fmtDate(n.date)}</div>
+      <div class="ni-preview">${n.content.replace(/<[^>]*>/g,'').substring(0,60)||'No content…'}</div>
+    </div>`).join(''):'<div style="padding:20px 14px;font-size:13px;color:var(--text3)">No notes found</div>';
+}
+
+function openNote(id){
+  currentId=id;
+  const n=notes.find(x=>x.id===id);if(!n)return;
+  document.getElementById('title-input').value=n.title||'';
+  document.getElementById('editor').innerHTML=n.content||'';
+  document.getElementById('sb-date').textContent=fmtDate(n.date);
+  document.getElementById('sb-mood').textContent=n.mood||'';
+  document.querySelectorAll('.mood').forEach(b=>b.classList.toggle('sel',b.textContent===n.mood));
+  updateWordCount();
+  /* Defer sidebar re-render so the click event fully completes first.
+     This prevents the DOM replacement from swallowing the click on mobile/touch. */
+  setTimeout(()=>{
+    renderList(document.getElementById('search').value);
+    if(window.innerWidth<=700)closeSidebar();
+  },0);
+  /* restore last mode used for this note */
+  const mode=n.lastMode||(n.type==='draw'?'draw':'text');
+  if(mode==='draw'){switchMode('draw');setTimeout(()=>loadDrawing(n),80);}
+  else{switchMode('text');setTimeout(()=>document.getElementById('editor').focus(),60);}
+}
+
+function saveNote(){
+  const n=notes.find(x=>x.id===currentId);if(!n)return;
+  n.title=document.getElementById('title-input').value;
+  n.content=document.getElementById('editor').innerHTML;
+  n.date=new Date().toISOString();
+  document.getElementById('sb-date').textContent=fmtDate(n.date);
+  persist();updateWordCount();renderList(document.getElementById('search').value);
+}
+
+function saveDrawingData(){
+  const n=notes.find(x=>x.id===currentId);if(!n)return;
+  n.drawing=JSON.stringify(strokes);n.type='draw';
+  n.date=new Date().toISOString();
+  document.getElementById('sb-date').textContent=fmtDate(n.date);
+  persist();renderList(document.getElementById('search').value);
+}
+
+function newNote(){
+  const n={id:nextId++,title:'',content:'',drawing:'',date:new Date().toISOString(),mood:'',type:'text'};
+  notes.unshift(n);persist();openNote(n.id);
+  setTimeout(()=>document.getElementById('title-input').focus(),60);
+}
+
+function deleteNote(){
+  if(!currentId)return;
+  const n=notes.find(x=>x.id===currentId);
+  showDeleteConfirm(n?.title||'this note');
+}
+function doDelete(){
+  notes=notes.filter(x=>x.id!==currentId);persist();
+  currentId=notes[0]?.id||null;
+  if(currentId)openNote(currentId);
+  else{document.getElementById('title-input').value='';document.getElementById('editor').innerHTML='';
+    document.getElementById('sb-words').textContent='0 words';renderList();}
+}
+
+function filterNotes(q){renderList(q);}
+
+/* ════════════════════════════════════════════
+   TEXT TOOLS — proper toggles with button state
+════════════════════════════════════════════ */
+function fmtToggle(cmd){
+  const editor=document.getElementById('editor');
+  editor.focus();
+  document.execCommand(cmd,false,null);
+  updateFormatButtons();
+  saveNote();
+}
+
+/* watch selection changes to keep toolbar buttons in sync */
+document.addEventListener('selectionchange',()=>{
+  if(currentMode==='text') updateFormatButtons();
+});
+
+function updateFormatButtons(){
+  try{
+    const cmds=['bold','italic','underline'];
+    const ids =['btn-bold','btn-italic','btn-underline'];
+    cmds.forEach((cmd,i)=>{
+      const active=document.queryCommandState(cmd);
+      document.getElementById(ids[i])?.classList.toggle('on',active);
+    });
+    /* highlight state — check for exact #FFF176 only, not "anything not white" */
+    const sel=window.getSelection();
+    if(sel&&sel.rangeCount>0){
+      const bgColor=document.queryCommandValue('backColor');
+      document.getElementById('btn-highlight')?.classList.toggle('on',isHighlightColor(bgColor));
+    }
+  }catch(e){}
+}
+
+function fmt(cmd,val){
+  document.getElementById('editor').focus();
+  document.execCommand(cmd,false,val||null);
+  updateFormatButtons();
+  saveNote();
+}
+function stampDate(){
+  document.getElementById('editor').focus();
+  const d=new Date().toLocaleString(undefined,{weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.execCommand('insertHTML',false,`<p><em style="color:var(--text3);font-size:13px;">— ${d}</em></p>`);
+  saveNote();
+}
+
+/* ── F4: text zoom with badge + pinch support ── */
+let textZoomLevel=1.0;
+let txZoomBadgeTimer=null;
+function textZoom(factor){
+  if(factor===0){textZoomLevel=1.0;}
+  else{textZoomLevel=Math.max(0.5,Math.min(3,textZoomLevel*factor));}
+  document.getElementById('editor').style.fontSize=(16*textZoomLevel)+'px';
+  showTextZoomBadge();
+}
+function showTextZoomBadge(){
+  const el=document.getElementById('text-zoom-badge');
+  if(!el)return;
+  el.textContent=Math.round(textZoomLevel*100)+'%';
+  el.classList.add('show');
+  clearTimeout(txZoomBadgeTimer);
+  txZoomBadgeTimer=setTimeout(()=>el.classList.remove('show'),1500);
+}
+/* pinch-to-zoom on text panel */
+let txPinchActive=false,txPinchDist=0,txPinchZoomStart=1;
+const txPointers=new Map();
+document.getElementById('editor-wrap').addEventListener('pointerdown',e=>{
+  txPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(txPointers.size===2){
+    const pts=[...txPointers.values()];
+    txPinchDist=Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y);
+    txPinchZoomStart=textZoomLevel;
+    txPinchActive=true;
+  }
+},{passive:true});
+document.getElementById('editor-wrap').addEventListener('pointermove',e=>{
+  if(!txPinchActive||txPointers.size<2)return;
+  txPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const pts=[...txPointers.values()];
+  const dist=Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y);
+  const raw=txPinchZoomStart*(dist/txPinchDist);
+  textZoomLevel=Math.max(0.5,Math.min(3,raw));
+  document.getElementById('editor').style.fontSize=(16*textZoomLevel)+'px';
+  showTextZoomBadge();
+},{passive:true});
+document.getElementById('editor-wrap').addEventListener('pointerup',e=>{
+  txPointers.delete(e.pointerId);
+  if(txPointers.size<2)txPinchActive=false;
+},{passive:true});
+
+/* ── F3: clear all text ── */
+function clearTextConfirm(){
+  showConfirm('Clear all text in this note?',()=>{
+    document.getElementById('editor').innerHTML='';
+    saveNote();
+  });
+}
+
+/* ── B2: auto-detect bullet/number shortcuts on Space ── */
+document.getElementById('editor').addEventListener('keydown',e=>{
+  if(e.key!==' ')return;
+  const sel=window.getSelection();
+  if(!sel||!sel.rangeCount)return;
+  const range=sel.getRangeAt(0);
+  const node=range.startContainer;
+  if(node.nodeType!==3)return; /* only in text nodes */
+  const text=node.textContent.substring(0,range.startOffset);
+  /* "- " or "* " → unordered list */
+  if(/^(-|\*)$/.test(text.trim())){
+    e.preventDefault();
+    node.textContent='';
+    document.execCommand('insertUnorderedList');
+    saveNote();
+    return;
+  }
+  /* "1. " → ordered list */
+  if(/^1\.$/.test(text.trim())){
+    e.preventDefault();
+    node.textContent='';
+    document.execCommand('insertOrderedList');
+    saveNote();
+  }
+});
+
+/* ── F1: Draw-to-Text (Windows Ink Handwriting Recognition) ── */
+/* Uses the experimental HandwritingRecognizer API where available (Edge/Chrome on Windows).
+   Falls back to a notice if the API isn't present on the current browser/OS. */
+let hCanvas=null, hCtx=null, hDrawing=false, hPoints=[], hRecognizer=null;
+
+async function initHandwritingPanel(){
+  const panel=document.getElementById('hw-panel');
+  if(!panel)return;
+  if(!('createHandwritingRecognizer' in navigator)){
+    panel.querySelector('#hw-status').textContent='Handwriting recognition not available in this browser. Try Microsoft Edge on Windows.';
+    return;
+  }
+  try{
+    hRecognizer=await navigator.createHandwritingRecognizer({languages:['en']});
+    panel.querySelector('#hw-status').textContent='Write in the box below, then tap "Insert text"';
+  }catch(err){
+    panel.querySelector('#hw-status').textContent='Could not start recognizer: '+err.message;
+  }
+}
+
+function toggleHandwriting(){
+  const panel=document.getElementById('hw-panel');
+  if(!panel)return;
+  const open=panel.style.display==='flex';
+  panel.style.display=open?'none':'flex';
+  if(!open)initHandwritingPanel();
+}
+
+async function recognizeHandwriting(){
+  if(!hRecognizer){alert('Recognizer not available.');return;}
+  const drawing=hRecognizer.startDrawing();
+  hPoints.forEach(stroke=>{
+    drawing.addStroke({points:stroke});
+  });
+  const [result]=await drawing.getPrediction();
+  drawing.delete();
+  if(result){
+    document.getElementById('editor').focus();
+    document.execCommand('insertText',false,result.text+' ');
+    saveNote();
+  }
+  /* clear the handwriting canvas */
+  hCtx.clearRect(0,0,hCanvas.width,hCanvas.height);
+  hPoints=[];
+}
+function updateWordCount(){
+  const t=(document.getElementById('editor').innerText||'').trim();
+  const w=t?t.split(/\s+/).filter(Boolean).length:0;
+  document.getElementById('sb-words').textContent=w+(w===1?' word':' words');
+}
+function setMood(emoji,btn){
+  const n=notes.find(x=>x.id===currentId);if(!n)return;
+  n.mood=emoji;document.getElementById('sb-mood').textContent=emoji;
+  document.querySelectorAll('.mood').forEach(b=>b.classList.toggle('sel',b===btn));
+  persist();renderList(document.getElementById('search').value);
+}
+function exportTxt(){
+  const n=notes.find(x=>x.id===currentId);if(!n)return;
+  const text=(n.title?n.title+'\n'+'─'.repeat(n.title.length)+'\n\n':'')+document.getElementById('editor').innerText;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+  a.download=(n.title||'note').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+/* ════════════════════════════════════════════
+   MODE SWITCH
+════════════════════════════════════════════ */
+let currentMode='text';
+function switchMode(mode){
+  currentMode=mode;
+  document.getElementById('tab-text').classList.toggle('active',mode==='text');
+  document.getElementById('tab-draw').classList.toggle('active',mode==='draw');
+  document.getElementById('text-panel').style.display=mode==='text'?'flex':'none';
+  document.getElementById('draw-panel').classList.toggle('show',mode==='draw');
+  document.getElementById('text-tools').style.display=mode==='text'?'flex':'none';
+  if(mode==='draw')resizeCanvas();
+  /* persist last mode for this note */
+  const n=notes.find(x=>x.id===currentId);
+  if(n){n.lastMode=mode;persist();}
+}
+
+/* ════════════════════════════════════════════
+   DRAWING ENGINE
+════════════════════════════════════════════ */
+const canvas=document.getElementById('draw-canvas');
+const ctx=canvas.getContext('2d');
+let strokes=[], currentStroke=null;
+let tool='pen', penColor='#1A1714', penSize=2;
+let isDrawing=false, activePenId=null;
+let palmTimer=null;
+
+/* zoom / pan */
+let zoomLevel=1, panX=0, panY=0;
+let isPanning=false, panStartX=0, panStartY=0, panOriginX=0, panOriginY=0;
+let pinchActive=false, pinchStartDist=0, pinchStartZoom=1;
+let zoomBadgeTimer=null;
+const activePointers=new Map();
+
+/* ── canvas resize ── */
+function resizeCanvas(){
+  const wrap=document.getElementById('canvas-wrap');
+  const W=wrap.clientWidth, H=wrap.clientHeight;
+  canvas.width=W; canvas.height=H;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  redrawAll();
+  drawPaperLines(W,H);
+}
+new ResizeObserver(()=>{if(currentMode==='draw')resizeCanvas();}).observe(document.getElementById('canvas-wrap'));
+
+/* ── transform helpers ── */
+function applyTransform(){ctx.setTransform(zoomLevel,0,0,zoomLevel,panX,panY);}
+
+function redrawAll(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  applyTransform();
+  strokes.forEach(drawStroke);
+  ctx.setTransform(1,0,0,1,0,0);
+}
+
+/* ── stroke rendering ── */
+function drawStroke(s){
+  if(!s.pts||s.pts.length<1)return;
+  ctx.save();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  if(s.tool==='eraser'){
+    ctx.globalCompositeOperation='destination-out';
+    ctx.strokeStyle='rgba(0,0,0,1)';
+    ctx.fillStyle='rgba(0,0,0,1)';
+  } else {
+    ctx.globalCompositeOperation='source-over';
+    ctx.strokeStyle=s.color;
+    ctx.globalAlpha=s.tool==='marker'?0.5:1;
+  }
+  if(s.pts.length===1){
+    const p=s.pts[0];
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,strokeWidth(s,p)/2,0,Math.PI*2);
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(s.pts[0].x,s.pts[0].y);
+    for(let i=1;i<s.pts.length;i++){
+      const p=s.pts[i];
+      ctx.lineWidth=strokeWidth(s,p);
+      if(i<s.pts.length-1){
+        const mx=(p.x+s.pts[i+1].x)/2, my=(p.y+s.pts[i+1].y)/2;
+        ctx.quadraticCurveTo(p.x,p.y,mx,my);
+      } else {ctx.lineTo(p.x,p.y);}
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function strokeWidth(s,p){
+  if(s.tool==='eraser')return s.baseSize*7;
+  if(s.tool==='marker')return s.baseSize*3.5;
+  return Math.max(0.4, s.baseSize*(p.pressure||0.5)*2);
+}
+
+/* ── pointer events ── */
+canvas.addEventListener('pointerdown', onDown, {passive:false});
+canvas.addEventListener('pointermove', onMove, {passive:false});
+canvas.addEventListener('pointerup',   onUp,   {passive:false});
+canvas.addEventListener('pointercancel',onUp,  {passive:false});
+canvas.addEventListener('pointerleave', onUp,  {passive:false});
+canvas.addEventListener('wheel', e=>{
+  e.preventDefault();
+  if(isDrawing)return;
+  const r=canvas.getBoundingClientRect();
+  /* gentler sensitivity: small delta = tiny zoom step */
+  const delta=Math.sign(e.deltaY)*Math.min(Math.abs(e.deltaY),100)/100;
+  const factor=1-delta*0.08;
+  zoomAt(e.clientX-r.left, e.clientY-r.top, factor);
+},{passive:false});
+
+function onDown(e){
+  e.preventDefault();
+  activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  canvas.setPointerCapture(e.pointerId);
+
+  /* two fingers → pinch */
+  if(activePointers.size===2){
+    isDrawing=false; activePenId=null; currentStroke=null; isPanning=false;
+    const pts=[...activePointers.values()];
+    pinchStartDist=Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y);
+    pinchStartZoom=zoomLevel;
+    pinchActive=true;
+    return;
+  }
+
+  /* PEN — always draws, zoom tool ignored for pen */
+  if(e.pointerType==='pen'){
+    if(activePenId!==null&&e.pointerId!==activePenId)return;
+    activePenId=e.pointerId; isDrawing=true;
+    const p=getPos(e);
+    currentStroke={tool,color:penColor,baseSize:penSize,pts:[{x:p.x,y:p.y,pressure:getPressure(e)}]};
+    showPenStatus(e);
+    return;
+  }
+
+  /* MOUSE — zoom tool or draw */
+  if(e.pointerType==='mouse'){
+    if(tool==='zoom'){
+      const r=canvas.getBoundingClientRect();
+      zoomAt(e.clientX-r.left,e.clientY-r.top,e.button===2?0.8:1.25);
+      return;
+    }
+    if(e.button!==0)return;
+    activePenId=e.pointerId; isDrawing=true;
+    const p=getPos(e);
+    currentStroke={tool,color:penColor,baseSize:penSize,pts:[{x:p.x,y:p.y,pressure:0.5}]};
+    showPenStatus(e);
+    return;
+  }
+
+  /* TOUCH — zoom tool taps to zoom, otherwise always pan */
+  if(tool==='zoom'){
+    const r=canvas.getBoundingClientRect();
+    zoomAt(e.clientX-r.left,e.clientY-r.top,1.25);
+    return;
+  }
+  isPanning=true;
+  panStartX=e.clientX; panStartY=e.clientY;
+  panOriginX=panX; panOriginY=panY;
+}
+
+function onMove(e){
+  e.preventDefault();
+  activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+
+  /* pinch zoom */
+  if(pinchActive&&activePointers.size>=2){
+    const pts=[...activePointers.values()];
+    const dist=Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y);
+    const mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+    const r=canvas.getBoundingClientRect();
+    /* dampen pinch: interpolate toward target zoom slowly */
+    const rawZoom=pinchStartZoom*(dist/pinchStartDist);
+    const newZoom=Math.min(8,Math.max(0.25,zoomLevel+(rawZoom-zoomLevel)*0.25));
+    zoomAt(mid.x-r.left,mid.y-r.top,newZoom/zoomLevel);
+    return;
+  }
+
+  /* pan */
+  if(isPanning){
+    panX=panOriginX+(e.clientX-panStartX);
+    panY=panOriginY+(e.clientY-panStartY);
+    clampPan(); redrawAll();
+    return;
+  }
+
+  /* update eraser ring */
+  if(tool==='eraser'){
+    const r=canvas.getBoundingClientRect();
+    const ring=document.getElementById('eraser-ring');
+    ring.setAttribute('cx',e.clientX-r.left);
+    ring.setAttribute('cy',e.clientY-r.top);
+    ring.setAttribute('r',Math.max(6,(penSize*7/2)*zoomLevel));
+  }
+
+  if(!isDrawing||e.pointerId!==activePenId)return;
+
+  /* collect coalesced points */
+  const evts=(e.getCoalescedEvents&&e.getCoalescedEvents())||[e];
+  evts.forEach(ev=>{
+    const p=getPos(ev);
+    currentStroke.pts.push({x:p.x,y:p.y,pressure:getPressure(ev)});
+  });
+
+  /* redraw bounding region of current stroke */
+  const pts=currentStroke.pts;
+  if(pts.length<2)return;
+  const pad=Math.max(penSize*8,20)*zoomLevel;
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  pts.forEach(p=>{
+    const sx=p.x*zoomLevel+panX, sy=p.y*zoomLevel+panY;
+    x0=Math.min(x0,sx);y0=Math.min(y0,sy);x1=Math.max(x1,sx);y1=Math.max(y1,sy);
+  });
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x0-pad,y0-pad,x1-x0+pad*2,y1-y0+pad*2);
+  ctx.clip();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(x0-pad,y0-pad,x1-x0+pad*2,y1-y0+pad*2);
+  applyTransform();
+  strokes.forEach(drawStroke);
+  drawStroke(currentStroke);
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.restore();
+
+  showPenStatus(e);
+}
+
+function onUp(e){
+  activePointers.delete(e.pointerId);
+  if(activePointers.size<2)pinchActive=false;
+
+  if(isPanning&&e.pointerType!=='pen'){isPanning=false;return;}
+  if(e.pointerId!==activePenId)return;
+
+  if(isDrawing&&currentStroke&&currentStroke.pts.length>0){
+    strokes.push(currentStroke);
+    redoStack=[];  /* new stroke clears redo history */
+    currentStroke=null;
+  }
+  isDrawing=false; activePenId=null;
+  saveDrawingData();
+}
+
+function getPos(e){
+  const r=canvas.getBoundingClientRect();
+  return {x:((e.clientX-r.left)-panX)/zoomLevel, y:((e.clientY-r.top)-panY)/zoomLevel};
+}
+function getPressure(e){
+  return(e.pointerType==='pen'&&e.pressure>0)?e.pressure:0.5;
+}
+function showPenStatus(e){
+  const el=document.getElementById('sb-pen');
+  if(e.pointerType==='pen'){
+    const pct=Math.round((e.pressure||0)*100);
+    const tilt=e.tiltX?` · ${e.tiltX}° tilt`:'';
+    el.textContent=`✒️ Stylus · ${pct}% pressure${tilt}`;
+  } else if(e.pointerType==='touch'){el.textContent='👆 Finger';}
+  else{el.textContent='🖱 Mouse';}
+}
+function flashPalm(){
+  const el=document.getElementById('palm-toast');
+  el.classList.add('show');clearTimeout(palmTimer);
+  palmTimer=setTimeout(()=>el.classList.remove('show'),1800);
+}
+
+/* ── zoom helpers ── */
+function zoomAt(sx,sy,factor){
+  const nz=Math.min(8,Math.max(0.25,zoomLevel*factor));
+  panX=sx-((sx-panX)/zoomLevel)*nz;
+  panY=sy-((sy-panY)/zoomLevel)*nz;
+  zoomLevel=nz;
+  clampPan(); redrawAll(); showZoomBadge();
+}
+function zoomStep(f){zoomAt(canvas.width/2,canvas.height/2,f);}
+function resetZoom(){zoomLevel=1;panX=0;panY=0;redrawAll();showZoomBadge();}
+function clampPan(){
+  const m=Math.max(canvas.width,canvas.height)*0.8;
+  panX=Math.max(-m,Math.min(m,panX));
+  panY=Math.max(-m,Math.min(m,panY));
+}
+function showZoomBadge(){
+  const el=document.getElementById('zoom-badge');
+  el.textContent=Math.round(zoomLevel*100)+'%';
+  el.classList.add('show');
+  clearTimeout(zoomBadgeTimer);
+  zoomBadgeTimer=setTimeout(()=>el.classList.remove('show'),1500);
+}
+
+/* ── tool select ── */
+function setTool(t,btn){
+  tool=t;
+  document.querySelectorAll('.dtb[id^=tool-]').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const ec=document.getElementById('eraser-cursor');
+  ec.style.display=t==='eraser'?'block':'none';
+  canvas.style.cursor=t==='zoom'?'zoom-in':t==='eraser'?'none':'crosshair';
+}
+/* eraser cursor: hide when leaving canvas */
+document.getElementById('canvas-wrap').addEventListener('pointerleave',()=>{
+  document.getElementById('eraser-cursor').style.display='none';
+},{passive:true});
+document.getElementById('canvas-wrap').addEventListener('pointerenter',()=>{
+  if(tool==='eraser')document.getElementById('eraser-cursor').style.display='block';
+},{passive:true});
+
+/* ── draw actions ── */
+let redoStack=[];
+
+function undoStroke(){
+  if(!strokes.length)return;
+  redoStack.push(strokes.pop());
+  redrawAll(); saveDrawingData();
+}
+function redoStroke(){
+  if(!redoStack.length)return;
+  strokes.push(redoStack.pop());
+  redrawAll(); saveDrawingData();
+}
+function clearCanvas(){
+  if(!strokes.length)return;
+  /* use a non-blocking in-page confirm toast instead of window.confirm */
+  showClearConfirm();
+}
+function doClear(){
+  redoStack=[];
+  strokes=[];
+  zoomLevel=1; panX=0; panY=0;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  showZoomBadge();
+  saveDrawingData();
+}
+function loadDrawing(n){
+  strokes=[];
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(n.drawing){try{strokes=JSON.parse(n.drawing);}catch(e){}}
+  zoomLevel=1; panX=0; panY=0;
+  redrawAll();
+}
+function savePNG(){
+  const n=notes.find(x=>x.id===currentId);
+  const tmp=document.createElement('canvas');
+  tmp.width=canvas.width; tmp.height=canvas.height;
+  const tc=tmp.getContext('2d');
+  tc.fillStyle='#fff'; tc.fillRect(0,0,tmp.width,tmp.height);
+  tc.drawImage(canvas,0,0);
+  const a=document.createElement('a');
+  a.href=tmp.toDataURL('image/png');
+  a.download=(n?.title||'drawing').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+/* ── lined paper ── */
+function drawPaperLines(W,H){
+  const svg=document.getElementById('paper-lines');
+  svg.setAttribute('width',W); svg.setAttribute('height',H);
+  if(!document.getElementById('lined-paper').checked){svg.innerHTML='';return;}
+  let html='';
+  for(let y=32;y<H;y+=32)html+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#8B5E3C" stroke-width="0.8"/>`;
+  html+=`<line x1="60" y1="0" x2="60" y2="${H}" stroke="#C49A72" stroke-width="1"/>`;
+  svg.innerHTML=html;
+}
+function toggleLines(){drawPaperLines(document.getElementById('canvas-wrap').clientWidth,document.getElementById('canvas-wrap').clientHeight);}
+
+/* ════════════════════════════════════════════
+   COLOR PALETTE
+════════════════════════════════════════════ */
+const BASE_PALETTE=[
+  {c:'#1A1714',n:'Black'},{c:'#374151',n:'Charcoal'},{c:'#6B7280',n:'Gray'},
+  {c:'#FFFFFF',n:'White'},{c:'#1E3A8A',n:'Navy'},{c:'#2563EB',n:'Blue'},
+  {c:'#06B6D4',n:'Cyan'},{c:'#0D9488',n:'Teal'},{c:'#166534',n:'Dark Green'},
+  {c:'#16A34A',n:'Green'},{c:'#84CC16',n:'Lime'},{c:'#CA8A04',n:'Amber'},
+  {c:'#EA580C',n:'Orange'},{c:'#991B1B',n:'Dark Red'},{c:'#DC2626',n:'Red'},
+  {c:'#BE185D',n:'Pink'},{c:'#7C3AED',n:'Violet'},{c:'#5B21B6',n:'Purple'},
+  {c:'#78350F',n:'Brown'},{c:'#B45309',n:'Tan'},
+];
+
+let palette=[...BASE_PALETTE];
+let swatchCount=7;
+let popoverOpen=false;
+let staged=new Set(); /* hex values clicked but not yet confirmed */
+
+function loadColorPrefs(){
+  try{
+    const d=JSON.parse(localStorage.getItem('jnl_colors')||'null');
+    if(d){palette=d.palette||palette;swatchCount=d.swatchCount||swatchCount;}
+  }catch(e){}
+}
+function saveColorPrefs(){
+  try{localStorage.setItem('jnl_colors',JSON.stringify({palette,swatchCount}));}catch(e){}
+}
+
+function renderColorBar(){
+  const bar=document.getElementById('pen-colors');
+  const visible=palette.slice(0,swatchCount);
+  bar.innerHTML=visible.map(p=>
+    `<div class="pcol${penColor===p.c?' sel':''}" style="background:${p.c}" title="${p.n}"
+      onclick="pickBarColor('${p.c}',this)"></div>`
+  ).join('');
+}
+
+function pickBarColor(c,el){
+  penColor=c;
+  document.querySelectorAll('.pcol').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function renderGrid(){
+  const barSet=new Set(palette.slice(0,swatchCount).map(p=>p.c));
+  document.getElementById('palette-grid').innerHTML=palette.map((p,i)=>{
+    const classes=['pal-swatch',barSet.has(p.c)?'in-bar':'',staged.has(p.c)?'staged':''].join(' ').trim();
+    return `<div class="${classes}" style="background:${p.c}" title="${p.n}"
+      onclick="toggleStage('${p.c}',this)"></div>`;
+  }).join('');
+  document.getElementById('swatch-count').value=swatchCount;
+  updateStagingCounter();
+}
+
+function toggleStage(hex,el){
+  const barColors=new Set(palette.slice(0,swatchCount).map(p=>p.c));
+  const alreadyInBar=barColors.has(hex);
+  const alreadyStaged=staged.has(hex);
+
+  if(alreadyStaged){
+    staged.delete(hex);
+    el.classList.remove('staged');
+  } else {
+    /* count how many NEW colors (not already in bar) are staged */
+    const stagedNew=[...staged].filter(h=>!barColors.has(h)).length;
+    const stagedRemoves=[...staged].filter(h=>barColors.has(h)).length;
+    /* available slots = swatchCount - (current in bar) + (staged removals) - (staged additions) */
+    const freeSlots=swatchCount - (barColors.size - stagedRemoves) - stagedNew;
+    if(!alreadyInBar && freeSlots<=0){
+      showPaletteWarning(`Bar is full (${swatchCount} colors). Remove one first or increase the count.`);
+      return;
+    }
+    staged.add(hex);
+    el.classList.add('staged');
+  }
+  updateStagingCounter();
+}
+function updateStagingCounter(){
+  const barColors=new Set(palette.slice(0,swatchCount).map(p=>p.c));
+  const stagedNew=[...staged].filter(h=>!barColors.has(h)).length;
+  const stagedRemoves=[...staged].filter(h=>barColors.has(h)).length;
+  const afterCount=barColors.size - stagedRemoves + stagedNew;
+  const el=document.getElementById('staging-counter');
+  if(el) el.textContent=`${afterCount} / ${swatchCount} in bar`;
+}
+
+/* paletteGearDown blocks the document mousedown listener from closing the popover
+   in the same event cycle that the gear button opens it */
+function paletteGearDown(e){ e.stopPropagation(); }
+function paletteGearClick(e){
+  e.stopPropagation();
+  if(popoverOpen){ closePopover(); return; }
+  staged=new Set();
+  document.getElementById('color-popover').classList.add('show');
+  popoverOpen=true;
+  renderGrid();
+}
+document.addEventListener('mousedown',e=>{
+  if(!popoverOpen)return;
+  const anchor=document.getElementById('colors-anchor');
+  if(anchor&&!anchor.contains(e.target))closePopover();
+});
+document.addEventListener('touchstart',e=>{
+  if(!popoverOpen)return;
+  const anchor=document.getElementById('colors-anchor');
+  if(anchor&&!anchor.contains(e.target))closePopover();
+},{passive:true});
+
+function confirmPalette(){
+  if(staged.size===0){closePopover();return;}
+  const barColors=new Set(palette.slice(0,swatchCount).map(p=>p.c));
+  staged.forEach(hex=>{
+    const i=palette.findIndex(p=>p.c===hex);
+    if(i===-1)return;
+    const [entry]=palette.splice(i,1);
+    if(barColors.has(hex))palette.push(entry); /* was in bar → move to back (remove) */
+    else palette.unshift(entry);               /* not in bar → move to front (add) */
+  });
+  staged=new Set();
+  saveColorPrefs();
+  renderColorBar();
+  closePopover();
+}
+function showPaletteWarning(msg){
+  let warn=document.getElementById('palette-warning');
+  if(!warn){
+    warn=document.createElement('p');
+    warn.id='palette-warning';
+    warn.style.cssText='color:var(--danger);font-size:11px;margin-top:6px;text-align:center;';
+    document.getElementById('color-popover').appendChild(warn);
+  }
+  warn.textContent=msg;
+  setTimeout(()=>{ if(warn)warn.textContent=''; },3000);
+}
+function closePopover(){
+  document.getElementById('color-popover').classList.remove('show');
+  popoverOpen=false;
+}
+
+function adjustCount(d){setSwatchCount(swatchCount+d);}
+function setSwatchCount(n){
+  swatchCount=Math.max(1,Math.min(16,isNaN(n)?1:n));
+  saveColorPrefs();renderColorBar();
+  if(popoverOpen)renderGrid();
+}
+
+function addCustomToStage(hex){
+  if(!palette.find(p=>p.c.toLowerCase()===hex.toLowerCase())){
+    palette.unshift({c:hex,n:'Custom'});
+  }
+  staged.add(hex);
+  renderGrid();
+}
+
+/* outside-click handled by paletteGearDown */
+
+/* ════════════════════════════════════════════
+   IN-PAGE CONFIRM TOAST
+════════════════════════════════════════════ */
+let confirmCallback=null;
+function showConfirm(msg,cb){
+  confirmCallback=cb;
+  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-toast').classList.add('show');
+}
+function hideConfirm(){
+  document.getElementById('confirm-toast').classList.remove('show');
+  confirmCallback=null;
+}
+function confirmYes(){
+  const cb=confirmCallback;
+  hideConfirm();
+  if(cb)cb();
+}
+function showClearConfirm(){showConfirm('Clear the entire drawing?',doClear);}
+function showDeleteConfirm(title){showConfirm(`Delete "${title}"?`,doDelete);}
+
+/* ════════════════════════════════════════════
+   PRINT
+════════════════════════════════════════════ */
+function doPrint(){
+  const n=notes.find(x=>x.id===currentId);
+  const title=n?.title||'Note';
+  const bodyContent=document.getElementById('editor').innerHTML||'';
+  const isDark=document.documentElement.classList.contains('dark');
+
+  /* Open a clean minimal window with just the note content */
+  const win=window.open('','_blank','width=800,height=600');
+  if(!win){alert('Please allow popups for this page to print.');return;}
+
+  win.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'DM Sans',sans-serif;color:#1A1714;background:#fff;
+        padding:40px 48px;max-width:800px;margin:0 auto;}
+      h1{font-family:'Lora',serif;font-size:24px;font-weight:600;
+        margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #ddd;}
+      .content{font-family:'Lora',serif;font-size:16px;line-height:1.85;}
+      .content ul,.content ol{padding-left:22px;}
+      .content b,.content strong{font-weight:600;}
+      @media print{body{padding:20px;}@page{margin:1.5cm;}}
+    </style>
+  </head><body>
+    <h1>${title}</h1>
+    <div class="content">${bodyContent}</div>
+  </body></html>`);
+  win.document.close();
+
+  /* Wait for fonts to load then print */
+  win.onload=()=>{
+    setTimeout(()=>{
+      win.focus();
+      win.print();
+      setTimeout(()=>win.close(),800);
+    },300);
+  };
+  /* Fallback if onload already fired */
+  setTimeout(()=>{
+    if(!win.closed){win.focus();win.print();}
+  },600);
+}
+
+/* ════════════════════════════════════════════
+   DONE NOTIFICATION
+════════════════════════════════════════════ */
+function showDone(){
+  const b=document.getElementById('done-banner');
+  b.style.display='block';
+  setTimeout(()=>{b.style.display='none';},3500);
+}
+
+/* ════════════════════════════════════════════
+   FONT SIZE
+════════════════════════════════════════════ */
+function changeFontSize(size){
+  document.getElementById('editor').focus();
+  document.execCommand('fontSize',false,'7'); /* placeholder size */
+  /* replace the browser's font tag with a span with exact px size */
+  document.querySelectorAll('#editor font[size="7"]').forEach(el=>{
+    const span=document.createElement('span');
+    span.style.fontSize=size+'px';
+    span.innerHTML=el.innerHTML;
+    el.replaceWith(span);
+  });
+  saveNote();
+}
+
+/* ════════════════════════════════════════════
+   HIGHLIGHT TOGGLE
+════════════════════════════════════════════ */
+/* exact highlight colour check — avoids false positives in dark mode */
+function isHighlightColor(c){
+  if(!c)return false;
+  /* rgb(255, 241, 118) is #FFF176 — the only colour we use for highlight */
+  return c==='rgb(255, 241, 118)'||c.toLowerCase()==='#fff176';
+}
+function toggleHighlight(){
+  const editor=document.getElementById('editor');
+  editor.focus();
+  const sel=window.getSelection();
+  if(!sel||sel.isCollapsed)return; /* need a selection */
+  const bgColor=document.queryCommandValue('backColor');
+  const isHl=isHighlightColor(bgColor);
+  document.execCommand('backColor',false,isHl?'transparent':'#FFF176');
+  updateFormatButtons();
+  saveNote();
+}
+
+/* heading feature removed */
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('mob-overlay');
+  const col=sb.classList.toggle('collapsed');
+  ov.classList.toggle('show',!col&&window.innerWidth<=700);
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.add('collapsed');
+  document.getElementById('mob-overlay').classList.remove('show');
+}
+/* auto-collapse on narrow window */
+new ResizeObserver(()=>{
+  if(window.innerWidth<=700){
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.getElementById('mob-overlay').classList.remove('show');
+  }
+}).observe(document.body);
+
+/* ════════════════════════════════════════════
+   KEYBOARD SHORTCUTS
+════════════════════════════════════════════ */
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='n'){e.preventDefault();newNote();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'&&currentMode==='draw'){e.preventDefault();undoStroke();}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||e.key==='Y')&&currentMode==='draw'){e.preventDefault();redoStroke();}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='='||e.key==='+')){e.preventDefault();if(currentMode==='draw')zoomStep(1.25);}
+  if((e.ctrlKey||e.metaKey)&&e.key==='-'){e.preventDefault();if(currentMode==='draw')zoomStep(0.8);}
+  if((e.ctrlKey||e.metaKey)&&e.key==='0'){e.preventDefault();if(currentMode==='draw')resetZoom();}
+});
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+loadStore();
+loadColorPrefs();
+renderColorBar();
+syncThemeIcon();
+if(window.innerWidth<=700)document.getElementById('sidebar').classList.add('collapsed');
+if(notes.length)openNote(notes[0].id);
+
+/* wire handwriting canvas */
+hCanvas=document.getElementById('hw-canvas');
+hCtx=hCanvas.getContext('2d');
+hCtx.strokeStyle='#1A1714';hCtx.lineWidth=2;hCtx.lineCap='round';hCtx.lineJoin='round';
+let hwCurrentStroke=null;
+hCanvas.addEventListener('pointerdown',e=>{
+  e.preventDefault();hCanvas.setPointerCapture(e.pointerId);
+  const r=hCanvas.getBoundingClientRect();
+  hwCurrentStroke=[{x:e.clientX-r.left,y:e.clientY-r.top,t:Date.now()}];
+  hCtx.beginPath();hCtx.moveTo(e.clientX-r.left,e.clientY-r.top);
+},{passive:false});
+hCanvas.addEventListener('pointermove',e=>{
+  if(!hwCurrentStroke)return;
+  const r=hCanvas.getBoundingClientRect();
+  const x=e.clientX-r.left,y=e.clientY-r.top;
+  hwCurrentStroke.push({x,y,t:Date.now()});
+  hCtx.lineTo(x,y);hCtx.stroke();
+},{passive:false});
+hCanvas.addEventListener('pointerup',()=>{
+  if(hwCurrentStroke){hPoints.push(hwCurrentStroke);hwCurrentStroke=null;}
+});
+
+/* notify user all updates are ready */
+showDone();
+</script>
+</body>
+</html>
