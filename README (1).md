@@ -2,7 +2,7 @@
 
 A fully offline, privacy-first journaling app with rich text editing and stylus handwriting support — built as a single HTML file with no frameworks or build steps.
 
-**[→ Live Demo](https://YOUR-USERNAME.github.io/journal-app)**
+**[→ Live Demo](https://rishikiran1103.github.io/journal-app)**
 
 ---
 
@@ -63,7 +63,7 @@ start journal-app.html       # Windows
 xdg-open journal-app.html    # Linux
 ```
 
-Or just **[open the live demo](https://YOUR-USERNAME.github.io/journal-app)** directly in your browser.
+Or just **[open the live demo](https://rishikiran1103.github.io/journal-app)** directly in your browser.
 
 ---
 
