@@ -69,7 +69,8 @@ Or just **[open the live demo](https://rishikiran1103.github.io/journal-app)** d
 
 ## Screenshots
 
-> *(Add screenshots here once deployed — one of the text editor, one of the draw mode)*
+<img width="1919" height="896" alt="image" src="https://github.com/user-attachments/assets/e2bae5f9-c7cf-499e-b366-640d94883ba5" />
+<img width="1919" height="891" alt="image" src="https://github.com/user-attachments/assets/170f8cb0-b427-481f-a4d7-a5139ad9d456" />
 
 ---
 
